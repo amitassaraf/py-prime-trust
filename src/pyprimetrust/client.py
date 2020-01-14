@@ -14,17 +14,21 @@ from .utils import require_connection
 
 class PrimeURLs:
     JWT_AUTH = '/auth/jwts'
-    CUSTODY_AGREEMENT_PREVIEW = '/v2/agreement-previews'
-    CUSTODY_ACCOUNT = '/v2/accounts'
-    CONTACTS = '/v2/contacts'
-    FUND_TRANSFER = '/v2/funds-transfers'
-    FUND_TRANSFER_METHODS = '/v2/funds-transfer-methods'
-    CONTRIBUTIONS = '/v2/contributions'
-    DISBURSEMENTS = '/v2/disbursements'
-    USERS = '/v2/users'
+    CUSTODY_AGREEMENT_PREVIEW = 'agreement-previews'
+    CUSTODY_ACCOUNT = 'accounts'
+    CONTACTS = 'contacts'
+    FUND_TRANSFER = 'funds-transfers'
+    FUND_TRANSFER_METHODS = 'funds-transfer-methods'
+    CONTRIBUTIONS = 'contributions'
+    DISBURSEMENTS = 'disbursements'
+    ACCOUNT_CASH_TRANSFERS = 'account-cash-transfers'
+    USERS = 'users'
+    DOCUMENTS = 'uploaded-documents'
 
 
 class PrimeClient(Session):
+    API_VERSION = 'v2'
+
     def __init__(self, root_user_email: str, root_user_password: str, debug: bool = False):
         super(PrimeClient, self).__init__()
         self._environment = SANDBOX_ENV if debug else PRODUCTION_ENV
@@ -34,7 +38,7 @@ class PrimeClient(Session):
         self._auth_token = None
 
     def request(self, method, url, *args, **kwargs) -> Tuple[Box, Response]:
-        url = urljoin(self._base_url, url)
+        url = urljoin(self._base_url, f'/{self.API_VERSION}', f'{url}')
         if method == 'POST':
             self.headers.update({'X-Request-ID': uuid4().hex})
         response = super(PrimeClient, self).request(method, url, *args, **kwargs)
@@ -74,7 +78,7 @@ class PrimeClient(Session):
         return DataNode.from_json(data.data.to_dict())
 
     @require_connection
-    def create_custody_account(self, contact: Contact) -> DataNode:
+    def custody_account_create(self, contact: Contact) -> DataNode:
         data, http_response = self.post(PrimeURLs.CUSTODY_ACCOUNT,
                                         data=ujson.dumps(RootDataNode(
                                             data=DataNode(
@@ -90,7 +94,7 @@ class PrimeClient(Session):
         return DataNode.from_json(data.data.to_dict())
 
     @require_connection
-    def create_entity_custody_account(self, contact: Contact) -> DataNode:
+    def custody_account_create_entity(self, contact: Contact) -> DataNode:
         data, http_response = self.post(PrimeURLs.CUSTODY_ACCOUNT,
                                         data=ujson.dumps(RootDataNode(
                                             data=DataNode(
@@ -106,13 +110,13 @@ class PrimeClient(Session):
         return DataNode.from_json(data.data.to_dict())
 
     @require_connection
-    def activate_custody_account(self, custody_account_id: str) -> DataNode:
+    def custody_account_activate(self, custody_account_id: str) -> DataNode:
         data, http_response = self.post(
             urljoin(PrimeURLs.CUSTODY_ACCOUNT, f'/{custody_account_id}', f'/{self._environment}', f'/open'))
         return DataNode.from_json(data.data.to_dict())
 
     @require_connection
-    def start_custody_kyc_process(self, custody_account_id: str, contact: Contact) -> DataNode:
+    def custody_kyc_start_process(self, custody_account_id: str, contact: Contact) -> DataNode:
         data, http_response = self.post(PrimeURLs.CONTACTS,
                                         data=ujson.dumps(RootDataNode(
                                             data=DataNode(
@@ -126,7 +130,7 @@ class PrimeClient(Session):
         return DataNode.from_json(data.data.to_dict())
 
     @require_connection
-    def get_custody_kyc_status(self, contact_id: str) -> RootListDataNode:
+    def custody_kyc_get_status(self, contact_id: str) -> RootListDataNode:
         data, http_response = self.get(PrimeURLs.CONTACTS,
                                        params={
                                            'filter[contact.id eq]': contact_id,
@@ -135,7 +139,7 @@ class PrimeClient(Session):
         return RootListDataNode.from_json(data.to_dict())
 
     @require_connection
-    def add_fund_transfer_method(self, contact_id: str, transfer_method: FundTransferMethod) -> DataNode:
+    def fund_transfer_method_add(self, contact_id: str, transfer_method: FundTransferMethod) -> DataNode:
         data, http_response = self.post(PrimeURLs.FUND_TRANSFER_METHODS,
                                         data=ujson.dumps(RootDataNode(
                                             data=DataNode(
@@ -149,7 +153,8 @@ class PrimeClient(Session):
         return DataNode.from_json(data.data.to_dict())
 
     @require_connection
-    def deposit_funds(self, custody_account_id: str, fund_transfer_method_id: str, amount: Decimal) -> DataNode:
+    def fund_transfer_deposit(self, custody_account_id: str, contact_id: str, fund_transfer_method_id: str,
+                              amount: Decimal) -> DataNode:
         data, http_response = self.post(
             PrimeURLs.CONTRIBUTIONS,
             params={'include': 'funds-transfer'},
@@ -159,14 +164,15 @@ class PrimeClient(Session):
                     attributes={
                         "amount": amount,
                         "funds-transfer-method-id": fund_transfer_method_id,
-                        "account-id": custody_account_id
+                        "account-id": custody_account_id,
+                        "contact-id": contact_id
                     }
                 )
             ).to_json()))
         return DataNode.from_json(data.data.to_dict())
 
     @require_connection
-    def withdraw_funds(self, custody_account_id: str, fund_transfer_method_id: str, amount: Decimal) -> DataNode:
+    def fund_transfer_withdraw(self, custody_account_id: str, amount: Decimal) -> DataNode:
         data, http_response = self.post(
             PrimeURLs.DISBURSEMENTS,
             params={'include': 'funds-transfer,disbursement-authorization'},
@@ -175,7 +181,6 @@ class PrimeClient(Session):
                     type="disbursements",
                     attributes={
                         "amount": amount,
-                        "funds-transfer-method-id": fund_transfer_method_id,
                         "account-id": custody_account_id
                     }
                 )
@@ -183,10 +188,46 @@ class PrimeClient(Session):
         return DataNode.from_json(data.data.to_dict())
 
     @require_connection
-    def get_funds_transfer_status(self, funds_transfer_id: str) -> RootListDataNode:
+    def fund_transfer_custody_to_custody(self, from_custody_account_id: str, to_custody_account_id: str,
+                                         amount: Decimal) -> DataNode:
+        data, http_response = self.post(
+            PrimeURLs.ACCOUNT_CASH_TRANSFERS,
+            params={'include': 'from-account-cash-totals,to-account-cash-totals'},
+            data=ujson.dumps(RootDataNode(
+                data=DataNode(
+                    type="account-cash-transfers",
+                    attributes={
+                        "amount": amount,
+                        "from-account-id": from_custody_account_id,
+                        "to-account-id": to_custody_account_id
+                    }
+                )
+            ).to_json()))
+        return DataNode.from_json(data.data.to_dict())
+
+    @require_connection
+    def fund_transfer_get_status(self, funds_transfer_id: str) -> RootListDataNode:
         data, http_response = self.get(PrimeURLs.FUND_TRANSFER,
                                        params={
                                            'filter[id eq]': funds_transfer_id,
                                            'include': 'contingent-holds'
                                        })
-        return RootListDataNode.from_json(data.to_dict())
+        return DataNode.from_json(data.data.to_dict())
+
+    @require_connection
+    def custody_account_upload_document(self, from_custody_account_id: str, to_custody_account_id: str,
+                                         amount: Decimal) -> DataNode:
+        data, http_response = self.post(
+            PrimeURLs.ACCOUNT_CASH_TRANSFERS,
+            params={'include': 'from-account-cash-totals,to-account-cash-totals'},
+            data=ujson.dumps(RootDataNode(
+                data=DataNode(
+                    type="account-cash-transfers",
+                    attributes={
+                        "amount": amount,
+                        "contact-id": from_custody_account_id,
+                        "to-account-id": to_custody_account_id
+                    }
+                )
+            ).to_json()))
+        return DataNode.from_json(data.data.to_dict())
