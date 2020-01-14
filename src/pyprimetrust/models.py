@@ -1,8 +1,26 @@
 from jsonobject import *
 
 
+def reconstruct(root: JsonObject.__class__, data):
+    if root is None:
+        return data
+
+    for key, type in root._properties_by_attr.items():
+        if isinstance(type, (ListProperty,)) and key in data:
+            data[key] = [reconstruct(getattr(type.item_wrapper,'item_type', None), item) for item in data[key]]
+        elif isinstance(type, (DictProperty,)) and key in data:
+            data[key] = {in_key: reconstruct(getattr(type.item_wrapper,'item_type', None), value) for in_key, value in data[key].items()}
+        elif isinstance(type, (ObjectProperty,)) and key in data:
+            data[key] = reconstruct(type.item_type, data[key])
+
+    if 'self' in data:
+        data['_self'] = data['self']
+        del data['self']
+    return root(**data)
+
+
 class Links(JsonObject):
-    self = StringProperty()
+    _self = StringProperty(name='self')
     first = StringProperty(exclude_if_none=True)
     related = StringProperty(exclude_if_none=True)
 
@@ -15,7 +33,7 @@ class DataNode(JsonObject):
     type = StringProperty()
     id = StringProperty(exclude_if_none=True)
     attributes = DictProperty()
-    links = ObjectProperty(Links)
+    links = ObjectProperty(Links, exclude_if_none=True)
     relationships = DictProperty(Relationship, exclude_if_none=True)
 
 
@@ -61,9 +79,10 @@ class Contact(JsonObject):
     primary_phone_number = ObjectProperty(PhoneNumber, name='primary-phone-number')
     primary_address = ObjectProperty(Address, name='primary-address')
     region_of_formation = StringProperty(name='region-of-formation', exclude_if_none=True)
+    related_contacts = ListProperty(ObjectProperty, name='related-contacts', exclude_if_none=True)
 
 
-Contact.related_contacts = ListProperty(Contact, name='related-contacts', exclude_if_none=True)
+Contact.related_contacts.item_wrapper._item_type = Contact
 
 
 class FundTransferMethod(JsonObject):
