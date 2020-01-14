@@ -44,3 +44,5 @@ src/\.DS_Store
 *.idea/
 *.idea/*
 .idea/codeStyles/codeStyleConfig.xml
+
+src/dist/
