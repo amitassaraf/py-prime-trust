@@ -71,7 +71,7 @@ class PrimeClient(Session):
                                                 }
                                             )
                                         ).to_json()))
-        return reconstruct(DataNode, data.data.to_dict())
+        return DataNode.from_json(data.data.to_dict())
 
     @require_connection
     def create_custody_account(self, contact: Contact) -> DataNode:
@@ -87,7 +87,7 @@ class PrimeClient(Session):
                                                 }
                                             )
                                         ).to_json()))
-        return reconstruct(DataNode, data.data.to_dict())
+        return DataNode.from_json(data.data.to_dict())
 
     @require_connection
     def create_entity_custody_account(self, contact: Contact) -> DataNode:
@@ -103,13 +103,13 @@ class PrimeClient(Session):
                                                 }
                                             )
                                         ).to_json()))
-        return reconstruct(DataNode, data.data.to_dict())
+        return DataNode.from_json(data.data.to_dict())
 
     @require_connection
     def activate_custody_account(self, custody_account_id: str) -> DataNode:
         data, http_response = self.post(
             urljoin(PrimeURLs.CUSTODY_ACCOUNT, f'/{custody_account_id}', f'/{self._environment}', f'/open'))
-        return reconstruct(DataNode, data.data.to_dict())
+        return DataNode.from_json(data.data.to_dict())
 
     @require_connection
     def start_custody_kyc_process(self, custody_account_id: str, contact: Contact) -> DataNode:
@@ -123,7 +123,7 @@ class PrimeClient(Session):
                                                 }
                                             )
                                         ).to_json()))
-        return reconstruct(DataNode, data.data.to_dict())
+        return DataNode.from_json(data.data.to_dict())
 
     @require_connection
     def get_custody_kyc_status(self, contact_id: str) -> RootListDataNode:
@@ -132,7 +132,7 @@ class PrimeClient(Session):
                                            'filter[contact.id eq]': contact_id,
                                            'include': 'cip-checks,aml-checks,kyc-document-checks'
                                        })
-        return reconstruct(RootListDataNode, data.to_dict())
+        return RootListDataNode.from_json(data.to_dict())
 
     @require_connection
     def add_fund_transfer_method(self, contact_id: str, transfer_method: FundTransferMethod) -> DataNode:
@@ -146,7 +146,7 @@ class PrimeClient(Session):
                                                 }
                                             )
                                         ).to_json()))
-        return reconstruct(DataNode, data.data.to_dict())
+        return DataNode.from_json(data.data.to_dict())
 
     @require_connection
     def deposit_funds(self, custody_account_id: str, fund_transfer_method_id: str, amount: Decimal) -> DataNode:
@@ -163,7 +163,7 @@ class PrimeClient(Session):
                     }
                 )
             ).to_json()))
-        return reconstruct(DataNode, data.data.to_dict())
+        return DataNode.from_json(data.data.to_dict())
 
     @require_connection
     def withdraw_funds(self, custody_account_id: str, fund_transfer_method_id: str, amount: Decimal) -> DataNode:
@@ -180,7 +180,7 @@ class PrimeClient(Session):
                     }
                 )
             ).to_json()))
-        return reconstruct(DataNode, data.data.to_dict())
+        return DataNode.from_json(data.data.to_dict())
 
     @require_connection
     def get_funds_transfer_status(self, funds_transfer_id: str) -> RootListDataNode:
@@ -189,4 +189,4 @@ class PrimeClient(Session):
                                            'filter[id eq]': funds_transfer_id,
                                            'include': 'contingent-holds'
                                        })
-        return reconstruct(RootListDataNode, data.to_dict())
+        return RootListDataNode.from_json(data.to_dict())

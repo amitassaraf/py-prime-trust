@@ -1,35 +1,46 @@
 from jsonobject import *
 
 
-def reconstruct(root: JsonObject.__class__, data):
-    if root is None:
-        return data
+class ReconstructableJsonObject(JsonObject):
 
-    for key, type in root._properties_by_attr.items():
-        if isinstance(type, (ListProperty,)) and key in data:
-            data[key] = [reconstruct(getattr(type.item_wrapper,'item_type', None), item) for item in data[key]]
-        elif isinstance(type, (DictProperty,)) and key in data:
-            data[key] = {in_key: reconstruct(getattr(type.item_wrapper,'item_type', None), value) for in_key, value in data[key].items()}
-        elif isinstance(type, (ObjectProperty,)) and key in data:
-            data[key] = reconstruct(type.item_type, data[key])
+    @classmethod
+    def from_json(cls, data):
+        return cls._from_json(cls, data)
 
-    if 'self' in data:
-        data['_self'] = data['self']
-        del data['self']
-    return root(**data)
+    @classmethod
+    def _from_json(cls, root: JsonObject.__class__, data):
+        if root is None:
+            return data
+
+        for key, type in root._properties_by_attr.items():
+            if isinstance(type, (ListProperty,)) and key in data:
+                data[key] = [cls._from_json(getattr(type.item_wrapper, 'item_type', None), item) for item in
+                             data[key]]
+            elif isinstance(type, (DictProperty,)) and key in data:
+                data[key] = {in_key: cls._from_json(getattr(type.item_wrapper, 'item_type', None), value) for
+                             in_key, value
+                             in
+                             data[key].items()}
+            elif isinstance(type, (ObjectProperty,)) and key in data:
+                data[key] = cls._from_json(type.item_type, data[key])
+
+        if 'self' in data:
+            data['_self'] = data['self']
+            del data['self']
+        return root(**data)
 
 
-class Links(JsonObject):
+class Links(ReconstructableJsonObject):
     _self = StringProperty(name='self')
     first = StringProperty(exclude_if_none=True)
     related = StringProperty(exclude_if_none=True)
 
 
-class Relationship(JsonObject):
+class Relationship(ReconstructableJsonObject):
     links = ObjectProperty(Links)
 
 
-class DataNode(JsonObject):
+class DataNode(ReconstructableJsonObject):
     type = StringProperty()
     id = StringProperty(exclude_if_none=True)
     attributes = DictProperty()
@@ -37,28 +48,28 @@ class DataNode(JsonObject):
     relationships = DictProperty(Relationship, exclude_if_none=True)
 
 
-class Meta(JsonObject):
+class Meta(ReconstructableJsonObject):
     page_count = IntegerProperty(name='page-count')
     resource_count = IntegerProperty(name='resource-count')
 
 
-class RootListDataNode(JsonObject):
+class RootListDataNode(ReconstructableJsonObject):
     data = ListProperty(DataNode)
     links = ObjectProperty(Links)
     meta = ObjectProperty(Meta)
 
 
-class RootDataNode(JsonObject):
+class RootDataNode(ReconstructableJsonObject):
     data = ObjectProperty(DataNode)
 
 
-class PhoneNumber(JsonObject):
+class PhoneNumber(ReconstructableJsonObject):
     country = StringProperty()
     number = StringProperty()
     sms = BooleanProperty()
 
 
-class Address(JsonObject):
+class Address(ReconstructableJsonObject):
     street_1 = StringProperty(name='street-1')
     street_2 = StringProperty(name='street-2')
     postal_code = StringProperty(name='postal-code')
@@ -67,7 +78,7 @@ class Address(JsonObject):
     country = StringProperty()
 
 
-class Contact(JsonObject):
+class Contact(ReconstructableJsonObject):
     contact_type = StringProperty(name='contact-type', choices=['natural_person', 'company'], default='natural_person')
     name = StringProperty()
     email = StringProperty()
@@ -85,7 +96,7 @@ class Contact(JsonObject):
 Contact.related_contacts.item_wrapper._item_type = Contact
 
 
-class FundTransferMethod(JsonObject):
+class FundTransferMethod(ReconstructableJsonObject):
     bank_account_name = StringProperty(name='bank-account-name')
     routing_number = StringProperty(name='routing-number', exclude_if_none=True)
     ip_address = StringProperty(name='ip-address')
@@ -97,7 +108,7 @@ class FundTransferMethod(JsonObject):
     plaid_account_id = StringProperty(name='plaid-account-id', exclude_if_none=True)
 
 
-class AccountQuestionnaire(JsonObject):
+class AccountQuestionnaire(ReconstructableJsonObject):
     nature_of_business_of_the_company = StringProperty(name='nature-of-business-of-the-company')
     purpose_of_account = StringProperty(name='purpose-of-account')
     source_of_assets_and_income = StringProperty(name='source-of-assets-and-income')
