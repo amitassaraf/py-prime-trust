@@ -1,3 +1,4 @@
+import os
 from decimal import Decimal
 from typing import Tuple
 from urllib.parse import urljoin
@@ -24,6 +25,7 @@ class PrimeURLs:
     ACCOUNT_CASH_TRANSFERS = 'account-cash-transfers'
     USERS = 'users'
     DOCUMENTS = 'uploaded-documents'
+    KYC_DOCUMENT_CHECKS = 'kyc-document-checks'
 
 
 class PrimeClient(Session):
@@ -206,7 +208,7 @@ class PrimeClient(Session):
         return DataNode.from_json(data.data.to_dict())
 
     @require_connection
-    def fund_transfer_get_status(self, funds_transfer_id: str) -> RootListDataNode:
+    def fund_transfer_get_status(self, funds_transfer_id: str) -> DataNode:
         data, http_response = self.get(PrimeURLs.FUND_TRANSFER,
                                        params={
                                            'filter[id eq]': funds_transfer_id,
@@ -215,18 +217,38 @@ class PrimeClient(Session):
         return DataNode.from_json(data.data.to_dict())
 
     @require_connection
-    def custody_account_upload_document(self, from_custody_account_id: str, to_custody_account_id: str,
-                                         amount: Decimal) -> DataNode:
+    def custody_account_upload_document(self, contact_id: str, document_label: str,
+                                        file_path: str, public: bool = False) -> DataNode:
         data, http_response = self.post(
-            PrimeURLs.ACCOUNT_CASH_TRANSFERS,
-            params={'include': 'from-account-cash-totals,to-account-cash-totals'},
+            PrimeURLs.DOCUMENTS,
+            files=(
+                ('contact-id', (None, contact_id)),
+                ('label', (None, document_label)),
+                ('public', (None, public)),
+                ('file', (os.path.basename(file_path), open(file_path, 'rb'))),
+            ))
+        return DataNode.from_json(data.data.to_dict())
+
+    @require_connection
+    def custody_account_kyc_document_uploaded(self, contact_id: str, uploaded_document_id: str,
+                                              expires_on: str, identity: bool, identity_photo: bool,
+                                              proof_of_address: bool, document_type: str,
+                                              backside_document_id: str = None) -> DataNode:
+        data, http_response = self.post(
+            PrimeURLs.KYC_DOCUMENT_CHECKS,
             data=ujson.dumps(RootDataNode(
                 data=DataNode(
-                    type="account-cash-transfers",
+                    type="kyc-document-checks",
                     attributes={
-                        "amount": amount,
-                        "contact-id": from_custody_account_id,
-                        "to-account-id": to_custody_account_id
+                        "contact-id": contact_id,
+                        "uploaded-document-id": uploaded_document_id,
+                        "backside-document-id": backside_document_id,
+                        "expires-on": expires_on,
+                        "identity": identity,
+                        "identity-photo": identity_photo,
+                        "proof-of-address": proof_of_address,
+                        "kyc-document-type": document_type,
+                        "kyc-document-country": "US",
                     }
                 )
             ).to_json()))
