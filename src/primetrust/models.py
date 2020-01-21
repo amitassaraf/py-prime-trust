@@ -78,12 +78,28 @@ class Address(ReconstructableJsonObject):
     country = StringProperty()
 
 
+KYC_DOCUMENT_TYPES = ["drivers_license", "government_id", "other", "passport", "residence_permit", "utility_bill"]
+
+
+class KYCDocument(ReconstructableJsonObject):
+    contact_id = StringProperty(name='contact-id')
+    uploaded_document_id = StringProperty(name='uploaded-document-id')
+    backside_document_id = StringProperty(name='backside-document-id', exclude_if_none=True)
+    expires_on = StringProperty(name='expires-on', exclude_if_none=True)
+    identity = BooleanProperty(name='identity', exclude_if_none=True)
+    identity_photo = BooleanProperty(name='identity-photo', exclude_if_none=True)
+    proof_of_address = BooleanProperty(name='proof-of-address', exclude_if_none=True)
+    kyc_document_type = StringProperty(name='kyc-document-type',
+                                       choices=KYC_DOCUMENT_TYPES, default='drivers_license')
+    kyc_document_country = StringProperty(name='kyc-document-country', default='US')
+
+
 class Contact(ReconstructableJsonObject):
     contact_type = StringProperty(name='contact-type', choices=['natural_person', 'company'], default='natural_person')
     name = StringProperty()
     email = StringProperty()
     date_of_birth = DateProperty(name='date-of-birth', exclude_if_none=True)
-    sex = StringProperty(choices=['male', 'female'], exclude_if_none=True)
+    sex = StringProperty(choices=['male', 'female', 'other'], exclude_if_none=True)
     tax_id_number = StringProperty(name='tax-id-number')
     tax_country = StringProperty(name='tax-country')
     label = StringProperty(exclude_if_none=True)
@@ -91,6 +107,7 @@ class Contact(ReconstructableJsonObject):
     primary_address = ObjectProperty(Address, name='primary-address')
     region_of_formation = StringProperty(name='region-of-formation', exclude_if_none=True)
     related_contacts = ListProperty(ObjectProperty, name='related-contacts', exclude_if_none=True)
+    account_roles = ListProperty(StringProperty, name='account-roles', default=['beneficiary'])
 
 
 Contact.related_contacts.item_wrapper._item_type = Contact
