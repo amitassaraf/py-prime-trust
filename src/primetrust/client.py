@@ -343,3 +343,27 @@ class PrimeClient(Session):
         if 'errors' in data.to_dict():
             raise PrimeTrustError(str(data), data)
         return DataNode.from_json(data.data.to_dict())
+
+    @require_connection
+    def sandbox_fund_transfer_clear(self, fund_transfer_id: str) -> DataNode:
+        data, http_response = self.post(
+            os.path.join(PrimeURLs.FUND_TRANSFER, f'{fund_transfer_id}', 'sandbox', 'clear'))
+        if 'errors' in data.to_dict():
+            raise PrimeTrustError(str(data), data)
+        return DataNode.from_json(data.data.to_dict())
+
+    @require_connection
+    def sandbox_fund_transfer_settle(self, fund_transfer_id: str) -> DataNode:
+        data, http_response = self.post(
+            os.path.join(PrimeURLs.FUND_TRANSFER, f'{fund_transfer_id}', 'sandbox', 'settle'))
+        if 'errors' in data.to_dict():
+            raise PrimeTrustError(str(data), data)
+        return DataNode.from_json(data.data.to_dict())
+
+    @require_connection
+    def sandbox_fund_transfer_reverse(self, fund_transfer_id: str) -> DataNode:
+        data, http_response = self.post(
+            os.path.join(PrimeURLs.FUND_TRANSFER, f'{fund_transfer_id}', 'sandbox', 'reverse'))
+        if 'errors' in data.to_dict():
+            raise PrimeTrustError(str(data), data)
+        return DataNode.from_json(data.data.to_dict())
