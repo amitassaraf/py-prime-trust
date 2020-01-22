@@ -97,7 +97,7 @@ class KYCDocument(ReconstructableJsonObject):
 class WebhookConfig(ReconstructableJsonObject):
     account_id = StringProperty(name='account-id')
     url = StringProperty(name='url')
-    shared_secret = BooleanProperty(name='shared-secret', exclude_if_none=True)
+    shared_secret = StringProperty(name='shared-secret', exclude_if_none=True)
     enabled = BooleanProperty(exclude_if_none=True)
     contact_email = StringProperty(name='contact-email', exclude_if_none=True)
 
@@ -108,7 +108,7 @@ class Contact(ReconstructableJsonObject):
     email = StringProperty()
     date_of_birth = DateProperty(name='date-of-birth', exclude_if_none=True)
     sex = StringProperty(choices=['male', 'female', 'other'], exclude_if_none=True)
-    tax_id_number = StringProperty(name='tax-id-number')
+    tax_id_number = StringProperty(name='tax-id-number', exclude_if_none=True)
     tax_country = StringProperty(name='tax-country')
     label = StringProperty(exclude_if_none=True)
     primary_phone_number = ObjectProperty(PhoneNumber, name='primary-phone-number')

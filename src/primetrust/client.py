@@ -16,7 +16,7 @@ from .models import *
 from .utils import require_connection
 
 
-class PrimeURLs:
+class PrimeTypes:
     JWT_AUTH = '/auth/jwts'
     CUSTODY_AGREEMENT_PREVIEW = 'agreement-previews'
     CUSTODY_ACCOUNT = 'accounts'
@@ -62,7 +62,7 @@ class PrimeClient(Session):
                 raise PrimeTrustError(str(err), {})
 
     def create_api_user(self, name: str, email: str, password: str) -> bool:
-        data, http_response = self.post(PrimeURLs.USERS, data=ujson.dumps(RootDataNode(data=DataNode(
+        data, http_response = self.post(PrimeTypes.USERS, data=ujson.dumps(RootDataNode(data=DataNode(
             type="user",
             attributes={
                 "email": email,
@@ -75,7 +75,7 @@ class PrimeClient(Session):
         return data
 
     def connect(self) -> bool:
-        data, http_response = self.post(PrimeURLs.JWT_AUTH, auth=(self._root_user_email, self._root_user_password))
+        data, http_response = self.post(PrimeTypes.JWT_AUTH, auth=(self._root_user_email, self._root_user_password))
         if 'errors' in data.to_dict():
             raise PrimeTrustError(str(data), data)
         self._auth_token = data.token
@@ -84,7 +84,7 @@ class PrimeClient(Session):
 
     @require_connection
     def custody_account_agreement_preview(self, contact: Contact) -> DataNode:
-        data, http_response = self.post(PrimeURLs.CUSTODY_AGREEMENT_PREVIEW,
+        data, http_response = self.post(PrimeTypes.CUSTODY_AGREEMENT_PREVIEW,
                                         data=ujson.dumps(RootDataNode(
                                             data=DataNode(
                                                 type="account",
@@ -102,7 +102,7 @@ class PrimeClient(Session):
 
     @require_connection
     def custody_account_create(self, contact: Contact) -> DataNode:
-        data, http_response = self.post(PrimeURLs.CUSTODY_ACCOUNT,
+        data, http_response = self.post(PrimeTypes.CUSTODY_ACCOUNT,
                                         data=ujson.dumps(RootDataNode(
                                             data=DataNode(
                                                 type="account",
@@ -120,7 +120,7 @@ class PrimeClient(Session):
 
     @require_connection
     def custody_account_create_entity(self, contact: Contact) -> DataNode:
-        data, http_response = self.post(PrimeURLs.CUSTODY_ACCOUNT,
+        data, http_response = self.post(PrimeTypes.CUSTODY_ACCOUNT,
                                         data=ujson.dumps(RootDataNode(
                                             data=DataNode(
                                                 type="account",
@@ -139,14 +139,14 @@ class PrimeClient(Session):
     @require_connection
     def sandbox_custody_account_activate(self, custody_account_id: str) -> DataNode:
         data, http_response = self.post(
-            os.path.join(PrimeURLs.CUSTODY_ACCOUNT, f'{custody_account_id}', f'{self._environment}', 'open'))
+            os.path.join(PrimeTypes.CUSTODY_ACCOUNT, f'{custody_account_id}', f'{self._environment}', 'open'))
         if 'errors' in data.to_dict():
             raise PrimeTrustError(str(data), data)
         return DataNode.from_json(data.data.to_dict())
 
     @require_connection
     def custody_kyc_start_process(self, custody_account_id: str, contact: Contact) -> DataNode:
-        data, http_response = self.post(PrimeURLs.CONTACTS,
+        data, http_response = self.post(PrimeTypes.CONTACTS,
                                         data=ujson.dumps(RootDataNode(
                                             data=DataNode(
                                                 type="contacts",
@@ -162,7 +162,7 @@ class PrimeClient(Session):
 
     @require_connection
     def custody_kyc_update(self, contact_id: str, contact: Contact) -> DataNode:
-        data, http_response = self.patch(os.path.join(PrimeURLs.CONTACTS, f'{contact_id}'),
+        data, http_response = self.patch(os.path.join(PrimeTypes.CONTACTS, f'{contact_id}'),
                                          data=ujson.dumps(RootDataNode(
                                              data=DataNode(
                                                  type="contacts",
@@ -177,7 +177,7 @@ class PrimeClient(Session):
 
     @require_connection
     def custody_kyc_get_status(self, contact_id: str) -> RootListDataNode:
-        data, http_response = self.get(PrimeURLs.CONTACTS,
+        data, http_response = self.get(PrimeTypes.CONTACTS,
                                        params={
                                            'filter[id eq]': contact_id,
                                            'include': 'cip-checks,kyc-document-checks'
@@ -188,7 +188,7 @@ class PrimeClient(Session):
 
     @require_connection
     def fund_transfer_method_add(self, contact_id: str, transfer_method: FundTransferMethod) -> DataNode:
-        data, http_response = self.post(PrimeURLs.FUND_TRANSFER_METHODS,
+        data, http_response = self.post(PrimeTypes.FUND_TRANSFER_METHODS,
                                         data=ujson.dumps(RootDataNode(
                                             data=DataNode(
                                                 type="funds-transfer-methods",
@@ -204,14 +204,14 @@ class PrimeClient(Session):
 
     @require_connection
     def fund_transfer_method_remove(self, fund_transfer_method_id: str) -> DataNode:
-        data, http_response = self.delete(os.path.join(PrimeURLs.FUND_TRANSFER_METHODS, f'{fund_transfer_method_id}'))
+        data, http_response = self.delete(os.path.join(PrimeTypes.FUND_TRANSFER_METHODS, f'{fund_transfer_method_id}'))
         if 'errors' in data.to_dict():
             raise PrimeTrustError(str(data), data)
         return DataNode.from_json(data.data.to_dict())
 
     @require_connection
     def fund_transfer_cancel(self, fund_transfer_id: str) -> DataNode:
-        data, http_response = self.post(os.path.join(PrimeURLs.FUND_TRANSFER_METHODS, f'{fund_transfer_id}', 'cancel'))
+        data, http_response = self.post(os.path.join(PrimeTypes.FUND_TRANSFER, f'{fund_transfer_id}', 'cancel'))
         if 'errors' in data.to_dict():
             raise PrimeTrustError(str(data), data)
         return DataNode.from_json(data.data.to_dict())
@@ -220,7 +220,7 @@ class PrimeClient(Session):
     def fund_transfer_deposit(self, custody_account_id: str, contact_id: str, fund_transfer_method_id: str,
                               amount: Decimal) -> DataNode:
         data, http_response = self.post(
-            PrimeURLs.CONTRIBUTIONS,
+            PrimeTypes.CONTRIBUTIONS,
             params={'include': 'funds-transfer'},
             data=ujson.dumps(RootDataNode(
                 data=DataNode(
@@ -241,7 +241,7 @@ class PrimeClient(Session):
     def fund_transfer_withdraw(self, custody_account_id: str, contact_id: str, fund_transfer_method_id: str,
                                amount: Decimal) -> DataNode:
         data, http_response = self.post(
-            PrimeURLs.DISBURSEMENTS,
+            PrimeTypes.DISBURSEMENTS,
             params={'include': 'funds-transfer'},
             data=ujson.dumps(RootDataNode(
                 data=DataNode(
@@ -262,7 +262,7 @@ class PrimeClient(Session):
     def fund_transfer_custody_to_custody(self, from_custody_account_id: str, to_custody_account_id: str,
                                          amount: Decimal) -> DataNode:
         data, http_response = self.post(
-            PrimeURLs.ACCOUNT_CASH_TRANSFERS,
+            PrimeTypes.ACCOUNT_CASH_TRANSFERS,
             params={'include': 'from-account-cash-totals,to-account-cash-totals'},
             data=ujson.dumps(RootDataNode(
                 data=DataNode(
@@ -280,7 +280,7 @@ class PrimeClient(Session):
 
     @require_connection
     def fund_transfer_get_status(self, funds_transfer_id: str) -> RootListDataNode:
-        data, http_response = self.get(PrimeURLs.FUND_TRANSFER,
+        data, http_response = self.get(PrimeTypes.FUND_TRANSFER,
                                        params={
                                            'filter[id eq]': funds_transfer_id,
                                            'include': 'contingent-holds'
@@ -293,7 +293,7 @@ class PrimeClient(Session):
     def custody_account_upload_document(self, contact_id: str, document_label: str,
                                         file_path: str, public: bool = False) -> DataNode:
         data, http_response = self.post(
-            PrimeURLs.DOCUMENTS,
+            PrimeTypes.DOCUMENTS,
             files=(
                 ('contact-id', (None, contact_id)),
                 ('label', (None, document_label)),
@@ -307,7 +307,7 @@ class PrimeClient(Session):
     @require_connection
     def custody_account_kyc_document_uploaded(self, document: KYCDocument) -> DataNode:
         data, http_response = self.post(
-            PrimeURLs.KYC_DOCUMENT_CHECKS,
+            PrimeTypes.KYC_DOCUMENT_CHECKS,
             data=ujson.dumps(RootDataNode(
                 data=DataNode(
                     type="kyc-document-checks",
@@ -323,7 +323,7 @@ class PrimeClient(Session):
     @require_connection
     def webhook_config_create(self, config: WebhookConfig) -> DataNode:
         data, http_response = self.post(
-            PrimeURLs.WEBHOOK_CONFIGS,
+            PrimeTypes.WEBHOOK_CONFIGS,
             data=ujson.dumps(RootDataNode(
                 data=DataNode(
                     type="webhook-configs",
@@ -338,7 +338,7 @@ class PrimeClient(Session):
 
     @require_connection
     def get_contingent_holds(self, custody_account_id: str) -> RootListDataNode:
-        data, http_response = self.get(PrimeURLs.CONTINGENT_HOLDS,
+        data, http_response = self.get(PrimeTypes.CONTINGENT_HOLDS,
                                        params={
                                            'account.id': custody_account_id
                                        })
@@ -348,7 +348,7 @@ class PrimeClient(Session):
 
     @require_connection
     def get_account_totals(self, custody_account_id: str) -> RootListDataNode:
-        data, http_response = self.get(PrimeURLs.ACCOUNT_CASH_TOTALS,
+        data, http_response = self.get(PrimeTypes.ACCOUNT_CASH_TOTALS,
                                        params={
                                            'account.id': custody_account_id
                                        })
@@ -359,7 +359,7 @@ class PrimeClient(Session):
     @require_connection
     def sandbox_custody_account_kyc_document_uploaded_verified(self, kyc_document_id: str) -> DataNode:
         data, http_response = self.post(
-            os.path.join(PrimeURLs.KYC_DOCUMENT_CHECKS, f'{kyc_document_id}', 'sandbox', 'verify'))
+            os.path.join(PrimeTypes.KYC_DOCUMENT_CHECKS, f'{kyc_document_id}', 'sandbox', 'verify'))
         if 'errors' in data.to_dict():
             raise PrimeTrustError(str(data), data)
         return DataNode.from_json(data.data.to_dict())
@@ -367,7 +367,7 @@ class PrimeClient(Session):
     @require_connection
     def sandbox_custody_account_kyc_document_uploaded_fail(self, kyc_document_id: str) -> DataNode:
         data, http_response = self.post(
-            os.path.join(PrimeURLs.KYC_DOCUMENT_CHECKS, f'{kyc_document_id}', 'sandbox', 'fail'))
+            os.path.join(PrimeTypes.KYC_DOCUMENT_CHECKS, f'{kyc_document_id}', 'sandbox', 'fail'))
         if 'errors' in data.to_dict():
             raise PrimeTrustError(str(data), data)
         return DataNode.from_json(data.data.to_dict())
@@ -375,7 +375,7 @@ class PrimeClient(Session):
     @require_connection
     def sandbox_custody_account_cip_check_approve(self, cip_check_id: str) -> DataNode:
         data, http_response = self.post(
-            os.path.join(PrimeURLs.CIP_CHECKS, f'{cip_check_id}', 'sandbox', 'approve'))
+            os.path.join(PrimeTypes.CIP_CHECKS, f'{cip_check_id}', 'sandbox', 'approve'))
         if 'errors' in data.to_dict():
             raise PrimeTrustError(str(data), data)
         return DataNode.from_json(data.data.to_dict())
@@ -383,7 +383,7 @@ class PrimeClient(Session):
     @require_connection
     def sandbox_custody_account_cip_check_deny(self, cip_check_id: str) -> DataNode:
         data, http_response = self.post(
-            os.path.join(PrimeURLs.CIP_CHECKS, f'{cip_check_id}', 'sandbox', 'deny'))
+            os.path.join(PrimeTypes.CIP_CHECKS, f'{cip_check_id}', 'sandbox', 'deny'))
         if 'errors' in data.to_dict():
             raise PrimeTrustError(str(data), data)
         return DataNode.from_json(data.data.to_dict())
@@ -391,7 +391,7 @@ class PrimeClient(Session):
     @require_connection
     def sandbox_fund_transfer_clear(self, fund_transfer_id: str) -> DataNode:
         data, http_response = self.post(
-            os.path.join(PrimeURLs.FUND_TRANSFER, f'{fund_transfer_id}', 'sandbox', 'clear'))
+            os.path.join(PrimeTypes.FUND_TRANSFER, f'{fund_transfer_id}', 'sandbox', 'clear'))
         if 'errors' in data.to_dict():
             raise PrimeTrustError(str(data), data)
         return DataNode.from_json(data.data.to_dict())
@@ -399,7 +399,7 @@ class PrimeClient(Session):
     @require_connection
     def sandbox_fund_transfer_settle(self, fund_transfer_id: str) -> DataNode:
         data, http_response = self.post(
-            os.path.join(PrimeURLs.FUND_TRANSFER, f'{fund_transfer_id}', 'sandbox', 'settle'))
+            os.path.join(PrimeTypes.FUND_TRANSFER, f'{fund_transfer_id}', 'sandbox', 'settle'))
         if 'errors' in data.to_dict():
             raise PrimeTrustError(str(data), data)
         return DataNode.from_json(data.data.to_dict())
@@ -407,7 +407,7 @@ class PrimeClient(Session):
     @require_connection
     def sandbox_fund_transfer_reverse(self, fund_transfer_id: str) -> DataNode:
         data, http_response = self.post(
-            os.path.join(PrimeURLs.FUND_TRANSFER, f'{fund_transfer_id}', 'sandbox', 'reverse'))
+            os.path.join(PrimeTypes.FUND_TRANSFER, f'{fund_transfer_id}', 'sandbox', 'reverse'))
         if 'errors' in data.to_dict():
             raise PrimeTrustError(str(data), data)
         return DataNode.from_json(data.data.to_dict())
@@ -415,7 +415,7 @@ class PrimeClient(Session):
     @require_connection
     def sandbox_contingent_holds_clear(self, contingent_hold_id: str) -> DataNode:
         data, http_response = self.post(
-            os.path.join(PrimeURLs.CONTINGENT_HOLDS, contingent_hold_id, self._environment, 'clear'))
+            os.path.join(PrimeTypes.CONTINGENT_HOLDS, contingent_hold_id, self._environment, 'clear'))
         if 'errors' in data.to_dict():
             raise PrimeTrustError(str(data), data)
         return DataNode.from_json(data.data.to_dict())
@@ -423,17 +423,25 @@ class PrimeClient(Session):
     @require_connection
     def sandbox_authorize_disbursment(self, disbursment_auth_id: str) -> DataNode:
         data, http_response = self.post(
-            os.path.join(PrimeURLs.DISBURSEMENTS_AUTH, disbursment_auth_id, self._environment, 'verify-owner'))
+            os.path.join(PrimeTypes.DISBURSEMENTS_AUTH, disbursment_auth_id, self._environment, 'verify-owner'))
         if 'errors' in data.to_dict():
             raise PrimeTrustError(str(data), data)
         return DataNode.from_json(data.data.to_dict())
 
     @require_connection
     def disbursment_authorization_get(self, custody_account_id: str) -> RootListDataNode:
-        data, http_response = self.get(PrimeURLs.DISBURSEMENTS_AUTH,
+        data, http_response = self.get(PrimeTypes.DISBURSEMENTS_AUTH,
                                        params={
                                            'account.id': custody_account_id
                                        })
         if 'errors' in data.to_dict():
             raise PrimeTrustError(str(data), data)
         return RootListDataNode.from_json(data.to_dict())
+
+    @require_connection
+    def custody_account_get(self, custody_account_id: str) -> DataNode:
+        data, http_response = self.get(os.path.join(PrimeTypes.CUSTODY_ACCOUNT, custody_account_id))
+        if 'errors' in data.to_dict():
+            raise PrimeTrustError(str(data), data)
+        return DataNode.from_json(data.data.to_dict())
+
