@@ -64,9 +64,9 @@ class RootDataNode(ReconstructableJsonObject):
 
 
 class PhoneNumber(ReconstructableJsonObject):
-    country = StringProperty()
+    country = StringProperty(default='US')
     number = StringProperty()
-    sms = BooleanProperty()
+    sms = BooleanProperty(default=False)
 
 
 class Address(ReconstructableJsonObject):
@@ -92,6 +92,14 @@ class KYCDocument(ReconstructableJsonObject):
     kyc_document_type = StringProperty(name='kyc-document-type',
                                        choices=KYC_DOCUMENT_TYPES, default='drivers_license')
     kyc_document_country = StringProperty(name='kyc-document-country', default='US')
+
+
+class WebhookConfig(ReconstructableJsonObject):
+    account_id = StringProperty(name='account-id')
+    url = StringProperty(name='url')
+    shared_secret = BooleanProperty(name='shared-secret', exclude_if_none=True)
+    enabled = BooleanProperty(exclude_if_none=True)
+    contact_email = StringProperty(name='contact-email', exclude_if_none=True)
 
 
 class Contact(ReconstructableJsonObject):
