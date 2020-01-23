@@ -445,3 +445,17 @@ class PrimeClient(Session):
             raise PrimeTrustError(str(data), data)
         return DataNode.from_json(data.data.to_dict())
 
+    @require_connection
+    def cip_check_get(self, cip_check_id: str) -> DataNode:
+        return self.generic_resource_get(PrimeTypes.CIP_CHECKS, cip_check_id)
+
+    @require_connection
+    def kyc_document_check_get(self, kyc_document_check_id: str) -> DataNode:
+        return self.generic_resource_get(PrimeTypes.KYC_DOCUMENT_CHECKS, kyc_document_check_id)
+
+    @require_connection
+    def generic_resource_get(self, resource_type: str, resource_id: str) -> DataNode:
+        data, http_response = self.get(os.path.join(resource_type, resource_id))
+        if 'errors' in data.to_dict():
+            raise PrimeTrustError(str(data), data)
+        return DataNode.from_json(data.data.to_dict())
