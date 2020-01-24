@@ -187,6 +187,16 @@ class PrimeClient(Session):
         return RootListDataNode.from_json(data.to_dict())
 
     @require_connection
+    def contact_get_from_custody(self, custody_account_id: str) -> RootListDataNode:
+        data, http_response = self.get(PrimeTypes.CONTACTS,
+                                       params={
+                                           'account.id': custody_account_id
+                                       })
+        if 'errors' in data.to_dict():
+            raise PrimeTrustError(str(data), data)
+        return RootListDataNode.from_json(data.to_dict())
+
+    @require_connection
     def fund_transfer_method_add(self, contact_id: str, transfer_method: FundTransferMethod) -> DataNode:
         data, http_response = self.post(PrimeTypes.FUND_TRANSFER_METHODS,
                                         data=ujson.dumps(RootDataNode(
@@ -441,6 +451,13 @@ class PrimeClient(Session):
     @require_connection
     def custody_account_get(self, custody_account_id: str) -> DataNode:
         data, http_response = self.get(os.path.join(PrimeTypes.CUSTODY_ACCOUNT, custody_account_id))
+        if 'errors' in data.to_dict():
+            raise PrimeTrustError(str(data), data)
+        return DataNode.from_json(data.data.to_dict())
+
+    @require_connection
+    def contact_get(self, contact_id: str) -> DataNode:
+        data, http_response = self.get(os.path.join(PrimeTypes.CONTACTS, contact_id))
         if 'errors' in data.to_dict():
             raise PrimeTrustError(str(data), data)
         return DataNode.from_json(data.data.to_dict())
