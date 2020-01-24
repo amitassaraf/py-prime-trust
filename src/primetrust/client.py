@@ -145,22 +145,6 @@ class PrimeClient(Session):
         return DataNode.from_json(data.data.to_dict())
 
     @require_connection
-    def custody_kyc_start_process(self, custody_account_id: str, contact: Contact) -> DataNode:
-        data, http_response = self.post(PrimeTypes.CONTACTS,
-                                        data=ujson.dumps(RootDataNode(
-                                            data=DataNode(
-                                                type="contacts",
-                                                attributes={
-                                                    "account-id": custody_account_id,
-                                                    **contact.to_json()
-                                                }
-                                            )
-                                        ).to_json()))
-        if 'errors' in data.to_dict():
-            raise PrimeTrustError(str(data), data)
-        return DataNode.from_json(data.data.to_dict())
-
-    @require_connection
     def custody_kyc_update(self, contact_id: str, contact: Contact) -> DataNode:
         data, http_response = self.patch(os.path.join(PrimeTypes.CONTACTS, f'{contact_id}'),
                                          data=ujson.dumps(RootDataNode(
