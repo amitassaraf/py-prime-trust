@@ -104,7 +104,7 @@ class WebhookConfig(ReconstructableJsonObject):
 
 class Contact(ReconstructableJsonObject):
     contact_type = StringProperty(name='contact-type', choices=['natural_person', 'company'], default='natural_person')
-    name = StringProperty()
+    name = StringProperty(exclude_if_none=True)
     email = StringProperty()
     date_of_birth = DateProperty(name='date-of-birth', exclude_if_none=True)
     sex = StringProperty(choices=['male', 'female', 'other'], exclude_if_none=True)
