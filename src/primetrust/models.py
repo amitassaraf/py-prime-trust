@@ -113,7 +113,7 @@ class Contact(ReconstructableJsonObject):
     label = StringProperty(exclude_if_none=True)
     primary_phone_number = ObjectProperty(PhoneNumber, name='primary-phone-number')
     primary_address = ObjectProperty(Address, name='primary-address')
-    region_of_formation = StringProperty(name='region-of-formation', exclude_if_none=True, default='DE')
+    region_of_formation = StringProperty(name='region-of-formation', exclude_if_none=True)
     related_contacts = ListProperty(ObjectProperty, name='related-contacts', exclude_if_none=True)
     account_roles = ListProperty(StringProperty, name='account-roles', default=['beneficiary'])
 
