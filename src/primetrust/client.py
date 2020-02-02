@@ -51,8 +51,12 @@ class PrimeClient(Session):
     def request(self, method, url, *args, **kwargs) -> Tuple[Box, Response]:
         url = urljoin(self._base_url, os.path.join(f'{self.API_VERSION}', f'{url}'))
         if method == 'POST':
-            if 'x_request_id' in kwargs and kwargs.get('x_request_id', None) is not None:
-                self.headers.update({'X-Request-ID': kwargs.pop('x_request_id')})
+            if 'x_request_id' in kwargs:
+                x_request_id = kwargs.pop('x_request_id')
+                if x_request_id is not None:
+                    self.headers.update({'X-Request-ID': x_request_id})
+                else:
+                    self.headers.update({'X-Request-ID': uuid4().hex})
             else:
                 self.headers.update({'X-Request-ID': uuid4().hex})
         response = super(PrimeClient, self).request(method, url, *args, **kwargs)
