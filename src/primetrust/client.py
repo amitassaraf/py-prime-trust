@@ -123,6 +123,22 @@ class PrimeClient(Session):
         return DataNode.from_json(data.data.to_dict())
 
     @require_connection
+    def contact_create(self, custody_account_id: str, contact: Contact, **kwargs) -> DataNode:
+        data, http_response = self.post(PrimeTypes.CONTACTS,
+                                        data=ujson.dumps(RootDataNode(
+                                            data=DataNode(
+                                                type="contacts",
+                                                attributes={
+                                                    **contact.to_json(),
+                                                    "account-id": custody_account_id
+                                                }
+                                            )
+                                        ).to_json()), **kwargs)
+        if 'errors' in data.to_dict():
+            raise PrimeTrustError(str(data), data)
+        return DataNode.from_json(data.data.to_dict())
+
+    @require_connection
     def custody_account_create_entity(self, contact: Contact, **kwargs) -> DataNode:
         data, http_response = self.post(PrimeTypes.CUSTODY_ACCOUNT,
                                         data=ujson.dumps(RootDataNode(

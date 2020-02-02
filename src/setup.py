@@ -11,7 +11,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='primetrust',
-    version='1.1.2',
+    version='1.1.3',
     private=True,
     description='API for primetrust',
     author='Amit Assaraf',
