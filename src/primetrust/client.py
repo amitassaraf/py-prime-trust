@@ -52,7 +52,7 @@ class PrimeClient(Session):
         url = urljoin(self._base_url, os.path.join(f'{self.API_VERSION}', f'{url}'))
         if method == 'POST':
             if 'x_request_id' in kwargs and kwargs.get('x_request_id', None) is not None:
-                self.headers.update({'X-Request-ID': kwargs['x_request_id']})
+                self.headers.update({'X-Request-ID': kwargs.pop('x_request_id')})
             else:
                 self.headers.update({'X-Request-ID': uuid4().hex})
         response = super(PrimeClient, self).request(method, url, *args, **kwargs)
