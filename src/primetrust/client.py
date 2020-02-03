@@ -322,14 +322,15 @@ class PrimeClient(Session):
     @require_connection
     def custody_account_upload_document(self, contact_id: str, document_label: str,
                                         file_path: str, public: bool = False, **kwargs) -> DataNode:
-        data, http_response = self.post(
-            PrimeTypes.DOCUMENTS,
-            files=(
-                ('contact-id', (None, contact_id)),
-                ('label', (None, document_label)),
-                ('public', (None, public)),
-                ('file', (os.path.basename(file_path), open(file_path, 'rb'))),
-            ), **kwargs)
+        with open(file_path, 'rb') as fle:
+            data, http_response = self.post(
+                PrimeTypes.DOCUMENTS,
+                files=(
+                    ('contact-id', (None, contact_id)),
+                    ('label', (None, document_label)),
+                    ('public', (None, public)),
+                    ('file', (os.path.basename(file_path), fle)),
+                ), **kwargs)
         if 'errors' in data.to_dict():
             raise PrimeTrustError(str(data), data)
         return DataNode.from_json(data.data.to_dict())

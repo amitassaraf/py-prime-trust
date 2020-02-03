@@ -115,7 +115,7 @@ class Contact(ReconstructableJsonObject):
     primary_address = ObjectProperty(Address, name='primary-address')
     region_of_formation = StringProperty(name='region-of-formation', exclude_if_none=True)
     related_contacts = ListProperty(ObjectProperty, name='related-contacts', exclude_if_none=True)
-    account_roles = ListProperty(StringProperty, name='account-roles', default=['beneficiary'])
+    account_roles = ListProperty(StringProperty, name='account-roles')
 
 
 Contact.related_contacts.item_wrapper._item_type = Contact
